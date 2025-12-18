@@ -34,7 +34,7 @@ spec:
     image: docker:dind
     args:
       - "--storage-driver=overlay2"
-      - "--insecure-registry=nexus.imcc.com:8085"
+      - "--insecure-registry=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085"
     securityContext:
       privileged: true
     env:
@@ -115,8 +115,8 @@ spec:
             steps {
                 container("dind") {
                     sh '''
-                        echo "=== LOGIN TO NEXUS ==="
-                        docker login http://nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
+                        echo "=== LOGIN TO NEXUS (HTTP INSECURE REGISTRY) ==="
+                        docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
                           -u student \
                           -p Imcc@2025
                     '''
