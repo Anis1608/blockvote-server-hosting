@@ -51,7 +51,7 @@ spec:
 
     environment {
         NAMESPACE  = "2401098"
-        NEXUS_HOST = "nexus.imcc.com:8085"
+        NEXUS_HOST = "nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085"
         NEXUS_REPO = "blockvote-2401098"
         IMAGE_TAG  = "v1"
     }
