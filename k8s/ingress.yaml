@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: blockvote-ingress
+spec:
+  rules:
+    - host: blockvote.college.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: blockvote-frontend-service
+                port:
+                  number: 80

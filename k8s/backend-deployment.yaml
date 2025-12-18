@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blockvote-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blockvote-backend
+  template:
+    metadata:
+      labels:
+        app: blockvote-backend
+    spec:
+      imagePullSecrets:
+        - name: nexus-secret
+      containers:
+        - name: backend
+          image: nexus.college.local:8082/blockvote-backend:BACKEND_TAG
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          env:
+            - name: NODE_ENV
+              value: "production"

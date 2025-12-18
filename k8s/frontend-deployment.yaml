@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blockvote-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blockvote-frontend
+  template:
+    metadata:
+      labels:
+        app: blockvote-frontend
+    spec:
+      imagePullSecrets:
+        - name: nexus-secret
+      containers:
+        - name: frontend
+          image: nexus.college.local:8082/blockvote-frontend:FRONTEND_TAG
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
