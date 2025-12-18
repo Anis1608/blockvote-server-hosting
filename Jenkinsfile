@@ -116,7 +116,7 @@ spec:
                 container("dind") {
                     sh '''
                         echo "=== LOGIN TO NEXUS ==="
-                        docker login nexus.imcc.com:8085 \
+                        docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
                           -u student \
                           -p Imcc@2025
                     '''
