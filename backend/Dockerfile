@@ -1,5 +1,5 @@
 # Backend Dockerfile for Blockchain Voting System
-FROM node:20-alpine3.17
+FROM node:20-bullseye-slim
 
 # Set working directory
 WORKDIR /app
