@@ -168,5 +168,26 @@ spec:
                 }
             }
         }
+
+        stage("DEBUG POD ISSUE") {
+    steps {
+        container('kubectl') {
+            sh '''
+                echo "=== POD LIST ==="
+                kubectl get pods -n 2401098
+
+                echo "=== BACKEND POD DESCRIBE ==="
+                kubectl describe pod -n 2401098 -l app=blockvote-backend
+
+                echo "=== FRONTEND POD DESCRIBE ==="
+                kubectl describe pod -n 2401098 -l app=blockvote-frontend
+
+                echo "=== EVENTS ==="
+                kubectl get events -n 2401098 --sort-by=.metadata.creationTimestamp
+            '''
+        }
+    }
+}
+
     }
 }
