@@ -53,6 +53,7 @@ spec:
         NAMESPACE  = "2401098"
         NEXUS_HOST = "nexus.imcc.com:8085"
         NEXUS_REPO = "blockvote-2401098"
+        IMAGE_TAG  = "v1"
     }
 
     stages {
@@ -64,12 +65,12 @@ spec:
         }
 
         /* ================= FRONTEND ================= */
-        stage('Install + Build Frontend') {
+        stage("Install + Build Frontend") {
             steps {
                 dir('frontend') {
                     container('node') {
                         sh '''
-                            echo "=== Frontend install & build ==="
+                            echo "=== FRONTEND INSTALL & BUILD ==="
                             npm cache clean --force || true
                             rm -rf node_modules package-lock.json || true
                             npm install --legacy-peer-deps
@@ -81,12 +82,12 @@ spec:
         }
 
         /* ================= BACKEND ================= */
-        stage('Install Backend') {
+        stage("Install Backend") {
             steps {
                 dir('backend') {
                     container('node') {
                         sh '''
-                            echo "=== Backend install ==="
+                            echo "=== BACKEND INSTALL ==="
                             npm cache clean --force || true
                             rm -rf node_modules package-lock.json || true
                             npm install --legacy-peer-deps
@@ -100,11 +101,11 @@ spec:
         stage("Build Docker Images") {
             steps {
                 container("dind") {
-                    sh """
-                        echo "=== Building Docker images ==="
+                    sh '''
+                        echo "=== BUILDING DOCKER IMAGES ==="
                         docker build -t blockvote-frontend:latest -f frontend/Dockerfile frontend/
                         docker build -t blockvote-backend:latest  -f backend/Dockerfile backend/
-                    """
+                    '''
                 }
             }
         }
@@ -113,48 +114,55 @@ spec:
         stage("Login to Nexus") {
             steps {
                 container("dind") {
-                    sh """
-                        docker login ${NEXUS_HOST} \
+                    sh '''
+                        echo "=== LOGIN TO NEXUS ==="
+                        docker login nexus.imcc.com:8085 \
                           -u student \
                           -p Imcc@2025
-                    """
+                    '''
                 }
             }
         }
 
         /* ================= PUSH IMAGES ================= */
-        stage("Push Images") {
+        stage("Push Images to Nexus") {
             steps {
                 container("dind") {
-                    sh """
-                        docker tag blockvote-frontend:latest ${NEXUS_HOST}/${NEXUS_REPO}/blockvote-frontend:v1
-                        docker tag blockvote-backend:latest  ${NEXUS_HOST}/${NEXUS_REPO}/blockvote-backend:v1
+                    sh '''
+                        echo "=== TAG & PUSH IMAGES ==="
 
-                        docker push ${NEXUS_HOST}/${NEXUS_REPO}/blockvote-frontend:v1
-                        docker push ${NEXUS_HOST}/${NEXUS_REPO}/blockvote-backend:v1
-                    """
+                        docker tag blockvote-frontend:latest \
+                          ${NEXUS_HOST}/${NEXUS_REPO}/blockvote-frontend:${IMAGE_TAG}
+
+                        docker tag blockvote-backend:latest \
+                          ${NEXUS_HOST}/${NEXUS_REPO}/blockvote-backend:${IMAGE_TAG}
+
+                        docker push ${NEXUS_HOST}/${NEXUS_REPO}/blockvote-frontend:${IMAGE_TAG}
+                        docker push ${NEXUS_HOST}/${NEXUS_REPO}/blockvote-backend:${IMAGE_TAG}
+                    '''
                 }
             }
         }
 
         /* ================= KUBERNETES DEPLOY ================= */
-        stage('Deploy to Kubernetes') {
+        stage("Deploy to Kubernetes") {
             steps {
                 container('kubectl') {
                     sh '''
-                        echo "=== Creating namespace if not exists ==="
-                        kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+                        echo "=== CREATE NAMESPACE (IF NOT EXISTS) ==="
+                        kubectl create namespace ${NAMESPACE} \
+                          --dry-run=client -o yaml | kubectl apply -f -
 
-                        echo "=== Deploying Backend ==="
+                        echo "=== APPLY BACKEND ==="
                         kubectl apply -n ${NAMESPACE} -f k8s/backend-deployment.yaml
                         kubectl apply -n ${NAMESPACE} -f k8s/backend-service.yaml
 
-                        echo "=== Deploying Frontend ==="
+                        echo "=== APPLY FRONTEND ==="
                         kubectl apply -n ${NAMESPACE} -f k8s/frontend-deployment.yaml
                         kubectl apply -n ${NAMESPACE} -f k8s/frontend-service.yaml
                         kubectl apply -n ${NAMESPACE} -f k8s/ingress.yaml
 
-                        echo "=== Pods Status ==="
+                        echo "=== POD STATUS ==="
                         kubectl get pods -n ${NAMESPACE}
                     '''
                 }
