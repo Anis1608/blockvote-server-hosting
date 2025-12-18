@@ -5,7 +5,9 @@ FROM node:20-bullseye-slim
 WORKDIR /app
 
 # Install dependencies for native modules (crypto, bcrypt, etc.)
-RUN apk add --no-cache python3 make g++
+RUN apt-get update && \
+    apt-get install -y python3 make g++ && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
