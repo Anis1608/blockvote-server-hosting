@@ -188,6 +188,22 @@ spec:
         }
     }
 }
+stage("Create Nexus Pull Secret") {
+    steps {
+        container('kubectl') {
+            sh '''
+                kubectl delete secret nexus-secret -n ${NAMESPACE} --ignore-not-found
+
+                kubectl create secret docker-registry nexus-secret \
+                  --docker-server=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
+                  --docker-username=student \
+                  --docker-password=Imcc@2025 \
+                  -n ${NAMESPACE}
+            '''
+        }
+    }
+}
+
 
     }
 }
