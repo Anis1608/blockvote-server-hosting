@@ -4,26 +4,26 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
-# Install dependencies for native modules (required for crypto libraries)
+# Install dependencies for native modules (crypto, bcrypt, etc.)
 RUN apk add --no-cache python3 make g++
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (SAFE for CI/CD)
+RUN npm install --legacy-peer-deps --omit=dev
 
-# Copy application code
+# Copy application source code
 COPY . .
 
 # Create uploads directory if it doesn't exist
 RUN mkdir -p uploads
 
-# Expose the port the app runs on
+# Expose backend port
 EXPOSE 5000
 
 # Set environment to production
 ENV NODE_ENV=production
 
-# Start the application
+# Start backend
 CMD ["node", "index.js"]
