@@ -2,9 +2,13 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: blockvote-ingress
+  namespace: "2401098"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
+  ingressClassName: nginx
   rules:
-    - host: blockvote.college.local
+    - host: blockvote.imcc.com
       http:
         paths:
           - path: /
