@@ -16,7 +16,7 @@ spec:
         - name: nexus-secret
       containers:
         - name: backend
-          image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/blockvote-2401098/blockvote-backend:v1
+          image: nexus.imcc.com:8082/blockvote-2401098/blockvote-backend:v1
           imagePullPolicy: Always
           ports:
             - containerPort: 5000

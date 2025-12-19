@@ -35,6 +35,7 @@ spec:
     args:
       - "--storage-driver=overlay2"
       - "--insecure-registry=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085"
+      - "--insecure-registry=nexus.imcc.com:8082"
     securityContext:
       privileged: true
     env:
@@ -115,8 +116,13 @@ spec:
             steps {
                 container("dind") {
                     sh '''
-                        echo "=== LOGIN TO NEXUS (HTTP INSECURE REGISTRY) ==="
+                        echo "=== LOGIN TO NEXUS (INTERNAL CLUSTER DNS) ==="
                         docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
+                          -u student \
+                          -p Imcc@2025
+                          
+                        echo "=== LOGIN TO NEXUS (EXTERNAL URL) ==="
+                        docker login nexus.imcc.com:8082 \
                           -u student \
                           -p Imcc@2025
                     '''
@@ -129,16 +135,23 @@ spec:
             steps {
                 container("dind") {
                     sh '''
-                        echo "=== TAG & PUSH IMAGES ==="
-
+                        echo "=== TAG & PUSH IMAGES (INTERNAL URL) ==="
                         docker tag blockvote-frontend:latest \
                           ${NEXUS_HOST}/${NEXUS_REPO}/blockvote-frontend:${IMAGE_TAG}
-
                         docker tag blockvote-backend:latest \
                           ${NEXUS_HOST}/${NEXUS_REPO}/blockvote-backend:${IMAGE_TAG}
-
+                        
                         docker push ${NEXUS_HOST}/${NEXUS_REPO}/blockvote-frontend:${IMAGE_TAG}
                         docker push ${NEXUS_HOST}/${NEXUS_REPO}/blockvote-backend:${IMAGE_TAG}
+
+                        echo "=== TAG & PUSH IMAGES (EXTERNAL URL FOR NODES) ==="
+                        docker tag blockvote-frontend:latest \
+                          nexus.imcc.com:8082/blockvote-2401098/blockvote-frontend:v1
+                        docker tag blockvote-backend:latest \
+                          nexus.imcc.com:8082/blockvote-2401098/blockvote-backend:v1
+                        
+                        docker push nexus.imcc.com:8082/blockvote-2401098/blockvote-frontend:v1
+                        docker push nexus.imcc.com:8082/blockvote-2401098/blockvote-backend:v1
 
                         echo "=== VERIFY IMAGES PUSHED ==="
                         docker images | grep blockvote
@@ -160,7 +173,7 @@ spec:
                         kubectl delete secret nexus-secret -n ${NAMESPACE} --ignore-not-found
 
                         kubectl create secret docker-registry nexus-secret \
-                          --docker-server=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
+                          --docker-server=nexus.imcc.com:8082 \
                           --docker-username=student \
                           --docker-password=Imcc@2025 \
                           -n ${NAMESPACE}
