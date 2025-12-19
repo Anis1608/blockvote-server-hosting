@@ -139,6 +139,9 @@ spec:
 
                         docker push ${NEXUS_HOST}/${NEXUS_REPO}/blockvote-frontend:${IMAGE_TAG}
                         docker push ${NEXUS_HOST}/${NEXUS_REPO}/blockvote-backend:${IMAGE_TAG}
+
+                        echo "=== VERIFY IMAGES PUSHED ==="
+                        docker images | grep blockvote
                     '''
                 }
             }
@@ -171,6 +174,12 @@ spec:
             steps {
                 container('kubectl') {
                     sh '''
+                        echo "=== DELETE OLD PODS (FORCE RESTART) ==="
+                        kubectl delete pods --all -n ${NAMESPACE} --ignore-not-found
+
+                        echo "=== VERIFY SECRET EXISTS ==="
+                        kubectl get secret nexus-secret -n ${NAMESPACE}
+
                         echo "=== APPLY BACKEND ==="
                         kubectl apply -n ${NAMESPACE} -f k8s/backend-deployment.yaml
                         kubectl apply -n ${NAMESPACE} -f k8s/backend-service.yaml
@@ -180,8 +189,33 @@ spec:
                         kubectl apply -n ${NAMESPACE} -f k8s/frontend-service.yaml
                         kubectl apply -n ${NAMESPACE} -f k8s/ingress.yaml
 
+                        echo "=== WAIT FOR PODS TO START ==="
+                        sleep 10
+
                         echo "=== POD STATUS ==="
                         kubectl get pods -n ${NAMESPACE}
+
+                        echo "=== DESCRIBE FAILING PODS (IF ANY) ==="
+                        kubectl describe pods -n ${NAMESPACE} | grep -A 20 "Events:"
+                    '''
+                }
+            }
+        }
+
+        /* ================= VERIFY DEPLOYMENT ================= */
+        stage("Verify Deployment") {
+            steps {
+                container('kubectl') {
+                    sh '''
+                        echo "=== WAITING FOR PODS TO BE READY ==="
+                        kubectl wait --for=condition=ready pod -l app=blockvote-backend -n ${NAMESPACE} --timeout=120s || true
+                        kubectl wait --for=condition=ready pod -l app=blockvote-frontend -n ${NAMESPACE} --timeout=120s || true
+
+                        echo "=== FINAL POD STATUS ==="
+                        kubectl get pods -n ${NAMESPACE}
+
+                        echo "=== CHECK INGRESS ==="
+                        kubectl get ingress -n ${NAMESPACE}
                     '''
                 }
             }
