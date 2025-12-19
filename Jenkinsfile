@@ -144,8 +144,8 @@ spec:
             }
         }
 
-        /* ================= KUBERNETES DEPLOY ================= */
-        stage("Deploy to Kubernetes") {
+        /* ================= CREATE DOCKER REGISTRY SECRET ================= */
+        stage("Create Nexus Pull Secret") {
             steps {
                 container('kubectl') {
                     sh '''
@@ -153,6 +153,24 @@ spec:
                         kubectl create namespace ${NAMESPACE} \
                           --dry-run=client -o yaml | kubectl apply -f -
 
+                        echo "=== CREATE NEXUS PULL SECRET ==="
+                        kubectl delete secret nexus-secret -n ${NAMESPACE} --ignore-not-found
+
+                        kubectl create secret docker-registry nexus-secret \
+                          --docker-server=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
+                          --docker-username=student \
+                          --docker-password=Imcc@2025 \
+                          -n ${NAMESPACE}
+                    '''
+                }
+            }
+        }
+
+        /* ================= KUBERNETES DEPLOY ================= */
+        stage("Deploy to Kubernetes") {
+            steps {
+                container('kubectl') {
+                    sh '''
                         echo "=== APPLY BACKEND ==="
                         kubectl apply -n ${NAMESPACE} -f k8s/backend-deployment.yaml
                         kubectl apply -n ${NAMESPACE} -f k8s/backend-service.yaml
@@ -168,41 +186,6 @@ spec:
                 }
             }
         }
-
-        stage("DEBUG POD ISSUE") {
-    steps {
-        container('kubectl') {
-            sh '''
-                echo "=== POD LIST ==="
-                kubectl get pods -n 2401098
-
-                echo "=== BACKEND POD DESCRIBE ==="
-                kubectl describe pod -n 2401098 -l app=blockvote-backend
-
-                echo "=== FRONTEND POD DESCRIBE ==="
-                kubectl describe pod -n 2401098 -l app=blockvote-frontend
-
-                echo "=== EVENTS ==="
-                kubectl get events -n 2401098 --sort-by=.metadata.creationTimestamp
-            '''
-        }
-    }
-}
-stage("Create Nexus Pull Secret") {
-    steps {
-        container('kubectl') {
-            sh '''
-                kubectl delete secret nexus-secret -n ${NAMESPACE} --ignore-not-found
-
-                kubectl create secret docker-registry nexus-secret \
-                  --docker-server=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
-                  --docker-username=student \
-                  --docker-password=Imcc@2025 \
-                  -n ${NAMESPACE}
-            '''
-        }
-    }
-}
 
 
     }
